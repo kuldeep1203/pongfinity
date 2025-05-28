@@ -7,6 +7,22 @@ using namespace std;
 const int screenwidth = 800;
 const int screenheight = 800;
 
+
+class floatingWindow{
+    public:
+
+    bool floatingWindow = true;
+    bool closewindow  = false;
+    void Drawbasefloat(const char *str){
+        DrawRectangle(200, 150, 400, 300, Fade(LIGHTGRAY, 0.9f));
+        DrawRectangleLines(200, 150, 400, 300, DARKGRAY);
+        DrawText(str, 280, 200, 20, DARKGRAY);
+    }
+
+    
+   
+};
+
 class Ball {
 public:
     int ball_x, ball_y;
@@ -126,30 +142,54 @@ int main() {
     Ball newBall(screenwidth, screenheight);
     Paddle paddle;
     CpuPaddle paddle2;
+    floatingWindow floatingwindow ;
+
     while (!WindowShouldClose()) {
-        paddle.Movement();
-        paddle2.Movement(newBall.ball_y);
-        int scoreUpdate = newBall.Update(paddle.paddle, paddle2.paddle);
-        if (scoreUpdate == 1) {
-            paddle.Point();
-            newBall.Reset();
-        } else if (scoreUpdate == 2) {
-            paddle2.Point();
-            newBall.Reset();
-        }
+
 
         BeginDrawing();
         ClearBackground(BLACK);
 
-        DrawLine(screenwidth / 2, 0, screenwidth / 2, screenheight, WHITE);
+        
+        if(IsKeyPressed(KEY_SPACE)){
+            floatingwindow.floatingWindow = !floatingwindow.floatingWindow;
+           
+        }
+        if(floatingwindow.floatingWindow){
+            floatingwindow.Drawbasefloat("Press 'Space' to start ");
+        }
 
-        DrawRectangleRec(paddle.paddle, WHITE);
-        DrawRectangleRec(paddle2.paddle, WHITE);
-
-        DrawText(to_string(paddle.getPoint()).c_str(), screenwidth / 4, 2, 50, WHITE);
-        DrawText(to_string(paddle2.getPoint()).c_str(), 3 * screenwidth / 4, 2, 50, WHITE);
-
-        DrawCircle(newBall.ball_x, newBall.ball_y, newBall.ball_radius, WHITE);
+        else{
+            paddle.Movement();
+            paddle2.Movement(newBall.ball_y);
+            int scoreUpdate = newBall.Update(paddle.paddle, paddle2.paddle);
+            if (scoreUpdate == 1) {
+                paddle.Point();
+                newBall.Reset();
+            } else if (scoreUpdate == 2) {
+                paddle2.Point();
+                newBall.Reset();
+            }
+    
+    
+            DrawLine(screenwidth / 2, 0, screenwidth / 2, screenheight, WHITE);
+    
+            DrawRectangleRec(paddle.paddle, WHITE);
+            DrawRectangleRec(paddle2.paddle, WHITE);
+    
+            DrawText(to_string(paddle.getPoint()).c_str(), screenwidth / 4, 2, 50, WHITE);
+            DrawText(to_string(paddle2.getPoint()).c_str(), 3 * screenwidth / 4, 2, 50, WHITE);
+    
+            DrawCircle(newBall.ball_x, newBall.ball_y, newBall.ball_radius, WHITE);
+            if(paddle.getPoint()==5 ){
+                floatingwindow.Drawbasefloat("Congrats you won,Press 'Space' to start");
+            }else if(paddle2.getPoint()==5 ){
+                ClearBackground(BLACK);
+                floatingwindow.Drawbasefloat("You lost:(,Press 'Space' to start");
+            }
+           
+        }
+       
 
         EndDrawing();
     }
