@@ -8,6 +8,44 @@ const int screenwidth = 800;
 const int screenheight = 800;
 
 
+
+// class Match{
+//     public: 
+    
+// }
+
+
+class Button {
+    public:
+    Rectangle button;
+    Button(float x, float y, float width, float height) {
+        button = {x, y, width, height};
+    }
+    bool IsMouseOver() const {
+        Vector2 mousePosition = GetMousePosition();
+        return CheckCollisionPointRec(mousePosition, button);
+    }
+    void Draw(const char* label) const {
+        bool hovered = IsMouseOver();
+        DrawRectangleRec(button, hovered ? LIGHTGRAY : GRAY);
+        DrawRectangleLinesEx(button, 2, DARKGRAY);  
+        int fontSize = 20;
+        int textWidth = MeasureText(label, fontSize);
+        DrawText(label, button.x + (button.width - textWidth) / 2, button.y + 15, fontSize, BLACK);
+    }
+    void Draw() const {
+        DrawRectangleRec(button, IsMouseOver() ? LIGHTGRAY : GRAY);
+        DrawRectangleLinesEx(button, 2, DARKGRAY);  
+    }
+    bool IsButtonClicked() const {
+        return IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && IsMouseOver();
+    }
+ 
+  
+   
+};
+
+
 class floatingWindow{
     public:
 
@@ -18,7 +56,7 @@ class floatingWindow{
         DrawRectangleLines(200, 150, 400, 300, DARKGRAY);
         DrawText(str, 280, 200, 20, DARKGRAY);
     }
-
+  
     
    
 };
@@ -143,10 +181,14 @@ int main() {
     Paddle paddle;
     CpuPaddle paddle2;
     floatingWindow floatingwindow ;
+    Button Hostbutton(300, 250, 200, 60);
+    Button Joinbutton(300, 350, 200, 60);
+    bool HostbuttonClicked = false;
+    bool JoinbuttonClicked = false;
 
     while (!WindowShouldClose()) {
 
-
+        
         BeginDrawing();
         ClearBackground(BLACK);
 
@@ -157,7 +199,25 @@ int main() {
         }
         if(floatingwindow.floatingWindow){
             floatingwindow.Drawbasefloat("Press 'Space' to start ");
+            Hostbutton.Draw("Create Game");
+            Joinbutton.Draw("Join Game");
+          
+          
+           
+           
         }
+        else if (Hostbutton.IsButtonClicked()) {
+            HostbuttonClicked = true;
+            floatingwindow.floatingWindow = false;
+        }
+        else if (Joinbutton.IsButtonClicked()) {
+            JoinbuttonClicked = true;
+            floatingwindow.floatingWindow = false;
+        }
+        // else if(HostbuttonClicked){
+        //     ClearBackground(BLACK);
+
+        // }
 
         else{
             paddle.Movement();
