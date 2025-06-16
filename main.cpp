@@ -6,6 +6,8 @@ using namespace std;
 
 const int screenwidth = 800;
 const int screenheight = 800;
+const Color NEON_GREEN = (Color){57,255,20,255};
+bool gameEnded = false;
 
 
 
@@ -84,10 +86,13 @@ public:
             ball_speed_y *= -1;
         }
 
-       
-        if (CheckCollisionCircleRec({(float)ball_x, (float)ball_y}, ball_radius, leftPaddle) ||
-            CheckCollisionCircleRec({(float)ball_x, (float)ball_y}, ball_radius, rightPaddle)) {
-            ball_speed_x *= -1;
+        
+        if (CheckCollisionCircleRec({(float)ball_x, (float)ball_y}, ball_radius, rightPaddle)) {
+            if(ball_speed_x>0)  ball_speed_x *= -1;
+        }
+            
+        if (CheckCollisionCircleRec({(float)ball_x, (float)ball_y}, ball_radius, leftPaddle)){
+            if(ball_speed_x<0) ball_speed_x *= -1;
         }
 
      
@@ -219,35 +224,53 @@ int main() {
 
         // }
 
-        else{
+
+
+        else if(!gameEnded){
             paddle.Movement();
             paddle2.Movement(newBall.ball_y);
+
+        
+
             int scoreUpdate = newBall.Update(paddle.paddle, paddle2.paddle);
             if (scoreUpdate == 1) {
                 paddle.Point();
                 newBall.Reset();
+                if (paddle.getPoint() == 5) gameEnded = true;
             } else if (scoreUpdate == 2) {
                 paddle2.Point();
                 newBall.Reset();
+                if (paddle2.getPoint() == 5) gameEnded = true;
             }
+            
     
+            DrawLine(screenwidth / 2, 0, screenwidth / 2, screenheight, NEON_GREEN);
     
-            DrawLine(screenwidth / 2, 0, screenwidth / 2, screenheight, WHITE);
+            DrawRectangleRec(paddle.paddle, NEON_GREEN);
+            DrawRectangleRec(paddle2.paddle, NEON_GREEN);
     
-            DrawRectangleRec(paddle.paddle, WHITE);
-            DrawRectangleRec(paddle2.paddle, WHITE);
+            DrawText(to_string(paddle.getPoint()).c_str(), screenwidth / 4, 2, 50, NEON_GREEN);
+            DrawText(to_string(paddle2.getPoint()).c_str(), 3 * screenwidth / 4, 2, 50, NEON_GREEN);
     
-            DrawText(to_string(paddle.getPoint()).c_str(), screenwidth / 4, 2, 50, WHITE);
-            DrawText(to_string(paddle2.getPoint()).c_str(), 3 * screenwidth / 4, 2, 50, WHITE);
-    
-            DrawCircle(newBall.ball_x, newBall.ball_y, newBall.ball_radius, WHITE);
-            if(paddle.getPoint()==5 ){
-                floatingwindow.Drawbasefloat("Congrats you won,Press 'Space' to start");
-            }else if(paddle2.getPoint()==5 ){
-                ClearBackground(BLACK);
-                floatingwindow.Drawbasefloat("You lost:(,Press 'Space' to start");
-            }
+            DrawCircle(newBall.ball_x, newBall.ball_y, newBall.ball_radius, NEON_GREEN);
+         
+            
            
+        }
+        else if(gameEnded){
+            ClearBackground(BLACK);
+            if (paddle.getPoint() == 5)
+                floatingwindow.Drawbasefloat("Congrats you won! Press 'Space' to restart");
+            else if (paddle2.getPoint() == 5)
+                floatingwindow.Drawbasefloat("You lost :( Press 'Space' to restart");
+    
+            if (IsKeyPressed(KEY_SPACE)) {
+                gameEnded = false;
+                floatingwindow.floatingWindow = true;
+                paddle = Paddle(); 
+                paddle2 = CpuPaddle();
+                newBall.Reset();
+            }
         }
        
 
