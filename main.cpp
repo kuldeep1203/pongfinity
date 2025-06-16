@@ -1,278 +1,139 @@
 #include <raylib.h>
+#include<raymath.h>
+#include <cmath>
 #include <iostream>
-#include <string>
 
 using namespace std;
 
-const int screenwidth = 800;
-const int screenheight = 800;
-const Color NEON_GREEN = (Color){57,255,20,255};
-bool gameEnded = false;
+const int screenWidth = 800;
+const int screenHeight = 800;
+const float centerX = screenWidth / 2.0f;
+const float centerY = screenHeight / 2.0f;
+const float arenaRadius = 300.0f;
 
+struct Ball {
+    Vector2 position;
+    Vector2 velocity;
+    float radius = 8.0f;
 
+    Ball() {
+        position = {centerX, centerY};
+        velocity = {3.5f, 2.5f};
+    }
 
-// class Match{
-//     public: 
-    
+    void Update() {
+        position.x += velocity.x;
+        position.y += velocity.y;
+
+        float dx = position.x - centerX;
+        float dy = position.y - centerY;
+        float dist = sqrtf(dx * dx + dy * dy);
+
+        if (dist + radius >= arenaRadius) {
+            Vector2 normal = Vector2Normalize({dx, dy});//normailizaing  will give us the direction 
+            float dot = velocity.x * normal.x + velocity.y * normal.y;
+            velocity.x -= 2 * dot * normal.x;
+            velocity.y -= 2 * dot * normal.y;
+        }
+    }
+
+    void Draw() {
+        DrawCircleV(position, radius, RAYWHITE);
+    }
+};
+
+// class Paddle {
+// public:
+//     float angle;           // In radians
+//     float angularSpeed;    // Speed of rotation
+//     float paddleLength;    // Arc length
+
+//     Paddle(float startAngle) {
+//         angle = startAngle;
+//         angularSpeed = 0.025f;
+//         paddleLength = 50.0f; // Arc length
+//     }
+
+//     void Move(bool clockwise) {
+//         if (clockwise)
+//             angle += angularSpeed;
+//         else
+//             angle -= angularSpeed;
+
+//         // Normalize angle between 0 and 2π
+//         if (angle >= 2 * PI) angle -= 2 * PI;
+//         if (angle < 0) angle += 2 * PI;
+//     }
+
+//     void Draw() {
+//         Vector2 p1 = {
+//             centerX + (arenaRadius - 10) * cosf(angle),
+//             centerY + (arenaRadius - 10) * sinf(angle)
+//         };
+//         Vector2 p2 = {
+//             centerX + (arenaRadius - 10) * cosf(angle + paddleLength / arenaRadius),
+//             centerY + (arenaRadius - 10) * sinf(angle + paddleLength / arenaRadius)
+//         };
+//         DrawLineEx(p1, p2, 8.0f, GREEN);
+//     }
+
+//     bool CheckCollision(Vector2 ballPos, float ballRadius) {
+//         float dx = ballPos.x - centerX;
+//         float dy = ballPos.y - centerY;
+//         float ballAngle = atan2f(dy, dx);
+//         if (ballAngle < 0) ballAngle += 2 * PI;
+
+//         float delta = fabsf(ballAngle - angle);
+//         if (delta > PI) delta = 2 * PI - delta;
+
+//         float dist = sqrtf(dx * dx + dy * dy);
+//         return delta < (paddleLength / arenaRadius) && dist + ballRadius >= arenaRadius - 12;
+//     }
+// };
+
+// void AIMove(Paddle &ai, Vector2 ballPos) {
+//     float dx = ballPos.x - centerX;
+//     float dy = ballPos.y - centerY;
+//     float ballAngle = atan2f(dy, dx);
+//     if (ballAngle < 0) ballAngle += 2 * PI;
+
+//     float diff = ballAngle - ai.angle;
+//     if (diff > PI) diff -= 2 * PI;
+//     if (diff < -PI) diff += 2 * PI;
+
+//     if (diff > 0.05f)
+//         ai.Move(true);
+//     else if (diff < -0.05f)
+//         ai.Move(false);
 // }
 
-
-class Button {
-    public:
-    Rectangle button;
-    Button(float x, float y, float width, float height) {
-        button = {x, y, width, height};
-    }
-    bool IsMouseOver() const {
-        Vector2 mousePosition = GetMousePosition();
-        return CheckCollisionPointRec(mousePosition, button);
-    }
-    void Draw(const char* label) const {
-        bool hovered = IsMouseOver();
-        DrawRectangleRec(button, hovered ? LIGHTGRAY : GRAY);
-        DrawRectangleLinesEx(button, 2, DARKGRAY);  
-        int fontSize = 20;
-        int textWidth = MeasureText(label, fontSize);
-        DrawText(label, button.x + (button.width - textWidth) / 2, button.y + 15, fontSize, BLACK);
-    }
-    void Draw() const {
-        DrawRectangleRec(button, IsMouseOver() ? LIGHTGRAY : GRAY);
-        DrawRectangleLinesEx(button, 2, DARKGRAY);  
-    }
-    bool IsButtonClicked() const {
-        return IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && IsMouseOver();
-    }
- 
-  
-   
-};
-
-
-class floatingWindow{
-    public:
-
-    bool floatingWindow = true;
-    bool closewindow  = false;
-    void Drawbasefloat(const char *str){
-        DrawRectangle(200, 150, 400, 300, Fade(LIGHTGRAY, 0.9f));
-        DrawRectangleLines(200, 150, 400, 300, DARKGRAY);
-        DrawText(str, 280, 200, 20, DARKGRAY);
-    }
-  
-    
-   
-};
-
-class Ball {
-public:
-    int ball_x, ball_y;
-    int ball_speed_x, ball_speed_y;
-    int ball_radius;
-
-    Ball(int s, int w) {
-        ball_x = s / 2;
-        ball_y = w / 2;
-        ball_speed_x = 5;
-        ball_speed_y = 5;
-        ball_radius = 15;
-    }
-
-    
-    int Update(Rectangle leftPaddle, Rectangle rightPaddle) {
-        ball_x += ball_speed_x;
-        ball_y += ball_speed_y;
-
-        if (ball_y + ball_radius >= screenheight || ball_y - ball_radius <= 0) {
-            ball_speed_y *= -1;
-        }
-
-        
-        if (CheckCollisionCircleRec({(float)ball_x, (float)ball_y}, ball_radius, rightPaddle)) {
-            if(ball_speed_x>0)  ball_speed_x *= -1;
-        }
-            
-        if (CheckCollisionCircleRec({(float)ball_x, (float)ball_y}, ball_radius, leftPaddle)){
-            if(ball_speed_x<0) ball_speed_x *= -1;
-        }
-
-     
-        if (ball_x - ball_radius > screenwidth) {
-            return 1;
-        }
-
-      
-        if (ball_x + ball_radius < 0) {
-            return 2;
-        }
-
-        return 0;
-    }
-
-    void Reset() {
-        ball_x = screenwidth / 2;
-        ball_y = screenheight / 2;
-        ball_speed_x = (ball_speed_x > 0) ? -5 : 5; 
-        ball_speed_y = 5;
-    }
-};
-
-class Paddle {
-    int PaddlePoint;
-public:
-    Rectangle paddle;
-   
-
-    Paddle() {
-        paddle = {0, screenheight / 2.0f - 50, 10, 100};
-        PaddlePoint = 0;
-    }
-    int getPoint(){
-        return PaddlePoint;
-    }
-    void Point(){
-        PaddlePoint++;
-    }
-
-    void Movement() {
-     
-        if (IsKeyDown(KEY_W)) {
-            paddle.y -= 5;
-            if (paddle.y < 0) paddle.y = 0;
-        }
-        if (IsKeyDown(KEY_S)) {
-            paddle.y += 5;
-            if (paddle.y + paddle.height > screenheight)
-                paddle.y = screenheight - paddle.height;
-        }
-    }
-};
-
-class CpuPaddle : public Paddle{
-    int CpuPoint;
-    public:
-    
-    CpuPaddle() {
-        CpuPoint=0;
-        paddle = {screenwidth - 10, screenheight / 2.0f - 50, 10, 100};
-    }
-    void Movement(int ballY) {
-        float paddleCenterY = paddle.y + paddle.height / 2.0f;
-
-        if (ballY < paddleCenterY - 10) {
-            paddle.y -= 4;
-            if (paddle.y < 0) paddle.y = 0;
-        } else if (ballY > paddleCenterY + 10) {
-            paddle.y += 4;
-            if (paddle.y + paddle.height > screenheight)
-                paddle.y = screenheight - paddle.height;
-        }
-    }
-    int getPoint(){
-        return CpuPoint;
-    }
-    void Point(){
-        CpuPoint++;
-    }
-
-
-};
-
-
 int main() {
-    InitWindow(screenwidth, screenheight, "Pong Game");
+    InitWindow(screenWidth, screenHeight, "Circular Pong");
     SetTargetFPS(60);
 
-    Ball newBall(screenwidth, screenheight);
-    Paddle paddle;
-    CpuPaddle paddle2;
-    floatingWindow floatingwindow ;
-    Button Hostbutton(300, 250, 200, 60);
-    Button Joinbutton(300, 350, 200, 60);
-    bool HostbuttonClicked = false;
-    bool JoinbuttonClicked = false;
+    Ball ball;
+    // Paddle player(PI / 2);       // Top
+    // Paddle ai(3 * PI / 2);       // Bottom
 
     while (!WindowShouldClose()) {
+        // if (IsKeyDown(KEY_LEFT)) player.Move(false);
+        // if (IsKeyDown(KEY_RIGHT)) player.Move(true);
 
-        
+        // AIMove(ai, ball.position);
+        ball.Update();
+
+        // if (player.CheckCollision(ball.position, ball.radius) ||
+        //     ai.CheckCollision(ball.position, ball.radius)) {
+        //     ball.velocity = Vector2Scale(ball.velocity, -1.0f);
+        // }
+
         BeginDrawing();
         ClearBackground(BLACK);
 
-        
-        if(IsKeyPressed(KEY_SPACE)){
-            floatingwindow.floatingWindow = !floatingwindow.floatingWindow;
-           
-        }
-        if(floatingwindow.floatingWindow){
-            floatingwindow.Drawbasefloat("Press 'Space' to start ");
-            Hostbutton.Draw("Create Game");
-            Joinbutton.Draw("Join Game");
-          
-          
-           
-           
-        }
-        else if (Hostbutton.IsButtonClicked()) {
-            HostbuttonClicked = true;
-            floatingwindow.floatingWindow = false;
-        }
-        else if (Joinbutton.IsButtonClicked()) {
-            JoinbuttonClicked = true;
-            floatingwindow.floatingWindow = false;
-        }
-        // else if(HostbuttonClicked){
-        //     ClearBackground(BLACK);
-
-        // }
-
-
-
-        else if(!gameEnded){
-            paddle.Movement();
-            paddle2.Movement(newBall.ball_y);
-
-        
-
-            int scoreUpdate = newBall.Update(paddle.paddle, paddle2.paddle);
-            if (scoreUpdate == 1) {
-                paddle.Point();
-                newBall.Reset();
-                if (paddle.getPoint() == 5) gameEnded = true;
-            } else if (scoreUpdate == 2) {
-                paddle2.Point();
-                newBall.Reset();
-                if (paddle2.getPoint() == 5) gameEnded = true;
-            }
-            
-    
-            DrawLine(screenwidth / 2, 0, screenwidth / 2, screenheight, NEON_GREEN);
-    
-            DrawRectangleRec(paddle.paddle, NEON_GREEN);
-            DrawRectangleRec(paddle2.paddle, NEON_GREEN);
-    
-            DrawText(to_string(paddle.getPoint()).c_str(), screenwidth / 4, 2, 50, NEON_GREEN);
-            DrawText(to_string(paddle2.getPoint()).c_str(), 3 * screenwidth / 4, 2, 50, NEON_GREEN);
-    
-            DrawCircle(newBall.ball_x, newBall.ball_y, newBall.ball_radius, NEON_GREEN);
-         
-            
-           
-        }
-        else if(gameEnded){
-            ClearBackground(BLACK);
-            if (paddle.getPoint() == 5)
-                floatingwindow.Drawbasefloat("Congrats you won! Press 'Space' to restart");
-            else if (paddle2.getPoint() == 5)
-                floatingwindow.Drawbasefloat("You lost :( Press 'Space' to restart");
-    
-            if (IsKeyPressed(KEY_SPACE)) {
-                gameEnded = false;
-                floatingwindow.floatingWindow = true;
-                paddle = Paddle(); 
-                paddle2 = CpuPaddle();
-                newBall.Reset();
-            }
-        }
-       
+        DrawCircleLines(centerX, centerY, arenaRadius, DARKGRAY);
+        // player.Draw();
+        // ai.Draw();
+        ball.Draw();
 
         EndDrawing();
     }
@@ -280,3 +141,5 @@ int main() {
     CloseWindow();
     return 0;
 }
+
+

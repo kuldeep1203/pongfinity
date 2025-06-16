@@ -1,0 +1,13 @@
+the ball reflects off the wall using the vector reflection formula
+
+// Vector reflection formula: R = V - 2 * (V . N) * N
+// where R is the reflected vector, V is the incoming vector, N is the normal vector of the surface
+// In this case, the normal vector N is the unit vector perpendicular to the wall
+// For a vertical wall, N = (1, 0) or (-1, 0)
+// For a horizontal wall, N = (0, 1) or (0, -1)
+// The dot product V . N is the projection of V onto N
+// The reflection vector R is then calculated by subtracting twice the projection from the incoming vector V
+// Example: If the ball hits a vertical wall with an incoming vector V = (vx, vy) and normal N = (1, 0)
+// R = (vx, vy) - 2 * ((vx * 1 + vy * 0) * (1, 0))
+// This will result in the ball reflecting off the wall correctly
+// The ball's position is updated based on the reflection vector
