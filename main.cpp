@@ -1,6 +1,8 @@
 #include <raylib.h>
 #include <iostream>
 #include <string>
+#include <thread>
+#include "server.h"
 
 using namespace std;
 
@@ -8,7 +10,15 @@ const int screenwidth = 800;
 const int screenheight = 800;
 const Color NEON_GREEN = (Color){57,255,20,255};
 bool gameEnded = false;
-
+bool serverRunning = false;
+thread serverThread;
+enum class ScreenState{
+    MENU,
+    HOSTING,
+    JOINING,
+    PLAYING,
+    GAME_OVER
+};
 
 
 // class Match{
@@ -181,7 +191,7 @@ class CpuPaddle : public Paddle{
 int main() {
     InitWindow(screenwidth, screenheight, "Pong Game");
     SetTargetFPS(60);
-
+    ScreenState currentScreen = ScreenState::MENU;
     Ball newBall(screenwidth, screenheight);
     Paddle paddle;
     CpuPaddle paddle2;
@@ -192,90 +202,97 @@ int main() {
     bool JoinbuttonClicked = false;
 
     while (!WindowShouldClose()) {
-
-        
         BeginDrawing();
         ClearBackground(BLACK);
-
-        
-        if(IsKeyPressed(KEY_SPACE)){
-            floatingwindow.floatingWindow = !floatingwindow.floatingWindow;
-           
-        }
-        if(floatingwindow.floatingWindow){
-            floatingwindow.Drawbasefloat("Press 'Space' to start ");
-            Hostbutton.Draw("Create Game");
-            Joinbutton.Draw("Join Game");
-          
-          
-           
-           
-        }
-        else if (Hostbutton.IsButtonClicked()) {
-            HostbuttonClicked = true;
-            floatingwindow.floatingWindow = false;
-        }
-        else if (Joinbutton.IsButtonClicked()) {
-            JoinbuttonClicked = true;
-            floatingwindow.floatingWindow = false;
-        }
-        // else if(HostbuttonClicked){
-        //     ClearBackground(BLACK);
-
-        // }
-
-
-
-        else if(!gameEnded){
-            paddle.Movement();
-            paddle2.Movement(newBall.ball_y);
-
-        
-
-            int scoreUpdate = newBall.Update(paddle.paddle, paddle2.paddle);
-            if (scoreUpdate == 1) {
-                paddle.Point();
-                newBall.Reset();
-                if (paddle.getPoint() == 5) gameEnded = true;
-            } else if (scoreUpdate == 2) {
-                paddle2.Point();
-                newBall.Reset();
-                if (paddle2.getPoint() == 5) gameEnded = true;
+    
+        switch (currentScreen) {
+            case ScreenState::MENU:
+            {
+                floatingwindow.Drawbasefloat("Press 'Space' to start ");
+                Hostbutton.Draw("Create Game");
+                Joinbutton.Draw("Join Game");
+    
+                if (Hostbutton.IsButtonClicked()) {
+                    currentScreen = ScreenState::HOSTING;
+                }
+                if (Joinbutton.IsButtonClicked()) {
+                    currentScreen = ScreenState::JOINING;
+                }
+                break;
             }
+            case ScreenState::HOSTING:
+            {   
+                if(!serverRunning){
+                    serverThread = thread(startServer);
+                    serverRunning = true;
+                }
             
+                DrawText("Hosting the game...\nPress ESC to go back", 200, 200, 20, NEON_GREEN);
+                
+              
+                // DrawText("Server up and running waiting for someone to join",400,400,20,NEON_GREEN);
+                if (IsKeyPressed(KEY_ESCAPE) ) {
+                    currentScreen = ScreenState::MENU;
+                }
+              
+                break;
+            }
+            case ScreenState::JOINING:
+            {
+                DrawText("Joining the game...\nPress ESC to go back", 200, 200, 20, NEON_GREEN);
+                if (IsKeyPressed(KEY_ESCAPE)) {
+                    currentScreen = ScreenState::MENU;
+                }
+               
+                break;
+            }
+            case ScreenState::PLAYING:
+            {
+                paddle.Movement();
+                paddle2.Movement(newBall.ball_y);
     
-            DrawLine(screenwidth / 2, 0, screenwidth / 2, screenheight, NEON_GREEN);
+                int scoreUpdate = newBall.Update(paddle.paddle, paddle2.paddle);
+                if (scoreUpdate == 1) {
+                    paddle.Point();
+                    newBall.Reset();
+                    if (paddle.getPoint() == 5) currentScreen = ScreenState::GAME_OVER;
+                } else if (scoreUpdate == 2) {
+                    paddle2.Point();
+                    newBall.Reset();
+                    if (paddle2.getPoint() == 5) currentScreen = ScreenState::GAME_OVER;
+                }
     
-            DrawRectangleRec(paddle.paddle, NEON_GREEN);
-            DrawRectangleRec(paddle2.paddle, NEON_GREEN);
+                DrawLine(screenwidth / 2, 0, screenwidth / 2, screenheight, NEON_GREEN);
     
-            DrawText(to_string(paddle.getPoint()).c_str(), screenwidth / 4, 2, 50, NEON_GREEN);
-            DrawText(to_string(paddle2.getPoint()).c_str(), 3 * screenwidth / 4, 2, 50, NEON_GREEN);
+                DrawRectangleRec(paddle.paddle, NEON_GREEN);
+                DrawRectangleRec(paddle2.paddle, NEON_GREEN);
     
-            DrawCircle(newBall.ball_x, newBall.ball_y, newBall.ball_radius, NEON_GREEN);
-         
-            
-           
-        }
-        else if(gameEnded){
-            ClearBackground(BLACK);
-            if (paddle.getPoint() == 5)
-                floatingwindow.Drawbasefloat("Congrats you won! Press 'Space' to restart");
-            else if (paddle2.getPoint() == 5)
-                floatingwindow.Drawbasefloat("You lost :( Press 'Space' to restart");
+                DrawText(to_string(paddle.getPoint()).c_str(), screenwidth / 4, 2, 50, NEON_GREEN);
+                DrawText(to_string(paddle2.getPoint()).c_str(), 3 * screenwidth / 4, 2, 50, NEON_GREEN);
     
-            if (IsKeyPressed(KEY_SPACE)) {
-                gameEnded = false;
-                floatingwindow.floatingWindow = true;
-                paddle = Paddle(); 
-                paddle2 = CpuPaddle();
-                newBall.Reset();
+                DrawCircle(newBall.ball_x, newBall.ball_y, newBall.ball_radius, NEON_GREEN);
+                break;
+            }
+            case ScreenState::GAME_OVER:
+            {
+                if (paddle.getPoint() == 5)
+                    floatingwindow.Drawbasefloat("Congrats you won! Press 'Space' to restart");
+                else if (paddle2.getPoint() == 5)
+                    floatingwindow.Drawbasefloat("You lost :( Press 'Space' to restart");
+    
+                if (IsKeyPressed(KEY_SPACE)) {
+                    currentScreen = ScreenState::MENU;
+                    paddle = Paddle();
+                    paddle2 = CpuPaddle();
+                    newBall.Reset();
+                }
+                break;
             }
         }
-       
-
+    
         EndDrawing();
     }
+    
 
     CloseWindow();
     return 0;
