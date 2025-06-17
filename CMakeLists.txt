@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 add_executable(pong
 main.cpp
 server.cpp
+client.cpp
 )
 # Link raylib (assuming it's installed)
 find_package(raylib REQUIRED)

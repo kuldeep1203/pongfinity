@@ -3,6 +3,7 @@
 #include <string>
 #include <thread>
 #include "server.h"
+#include "client.h"
 
 using namespace std;
 
@@ -11,7 +12,8 @@ const int screenheight = 800;
 const Color NEON_GREEN = (Color){57,255,20,255};
 bool gameEnded = false;
 bool serverRunning = false;
-thread serverThread;
+bool clientRunning = false;
+thread serverThread,clientThread;
 enum class ScreenState{
     MENU,
     HOSTING,
@@ -226,19 +228,24 @@ int main() {
                     serverThread = thread(startServer);
                     serverRunning = true;
                 }
+                
             
                 DrawText("Hosting the game...\nPress ESC to go back", 200, 200, 20, NEON_GREEN);
                 
               
                 // DrawText("Server up and running waiting for someone to join",400,400,20,NEON_GREEN);
-                if (IsKeyPressed(KEY_ESCAPE) ) {
-                    currentScreen = ScreenState::MENU;
-                }
+                // if (IsKeyPressed(KEY_ESCAPE) ) {
+                //     currentScreen = ScreenState::MENU;
+                // }
               
                 break;
             }
             case ScreenState::JOINING:
-            {
+            {   
+                if(!clientRunning){
+                    clientThread = thread(startClient);
+                    clientRunning = true;
+                }
                 DrawText("Joining the game...\nPress ESC to go back", 200, 200, 20, NEON_GREEN);
                 if (IsKeyPressed(KEY_ESCAPE)) {
                     currentScreen = ScreenState::MENU;
