@@ -1,4 +1,4 @@
 // server.h
 #pragma once
-
-int startServer();
+#include<atomic>
+void startServer(std::atomic<int>&ClientConnected);

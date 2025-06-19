@@ -1,10 +1,15 @@
 #include <enet/enet.h>
 #include<iostream>
+#include<atomic>
 #include "server.h"
-int startServer() {
+
+using namespace std;
+
+void startServer(atomic<int>& ClientConnected) {
     if (enet_initialize() != 0) {
         fprintf(stderr, " Failed to initialize ENet.\n");
-        return EXIT_FAILURE;
+        ClientConnected = -1 ;
+        return;
     }
     atexit(enet_deinitialize);
 
@@ -17,7 +22,8 @@ int startServer() {
     server = enet_host_create(&address, 32, 2, 0, 0);
     if (server == NULL) {
         fprintf(stderr, "Failed to create ENet server.\n");
-        return EXIT_FAILURE;
+        ClientConnected = -1;
+        return;
     }
 
     printf("ENet server started on port 1234. Waiting for connections...\n");
@@ -33,6 +39,7 @@ int startServer() {
                         (event.peer->address.host >> 16) & 0xFF,
                         (event.peer->address.host >> 24) & 0xFF,
                         event.peer->address.port);
+                        ClientConnected=1;
                     break;
 
                 case ENET_EVENT_TYPE_RECEIVE:
@@ -53,5 +60,5 @@ int startServer() {
     }
 
     enet_host_destroy(server);
-    return 0;
+    
 }

@@ -2,6 +2,8 @@
 #include <iostream>
 #include <string>
 #include <thread>
+#include<atomic>
+#include<chrono>
 #include "server.h"
 #include "client.h"
 
@@ -12,8 +14,9 @@ const int screenheight = 800;
 const Color NEON_GREEN = (Color){57,255,20,255};
 bool gameEnded = false;
 bool serverRunning = false;
+atomic<int> ClientConnected = 0;
 bool clientRunning = false;
-thread serverThread,clientThread;
+thread clientThread;
 enum class ScreenState{
     MENU,
     HOSTING,
@@ -224,19 +227,43 @@ int main() {
             }
             case ScreenState::HOSTING:
             {   
+                DrawText("Hosting the game...\nPress 'B' to go back", 200, 200, 20, NEON_GREEN);
+                static auto start  = chrono::steady_clock::now();
+                thread serverThread(startServer,ref(ClientConnected));
+                serverRunning = true;
                 if(!serverRunning){
-                    serverThread = thread(startServer);
-                    serverRunning = true;
-                }
+                        if(ClientConnected==-1){
+                            cout<<"failed to start up the server";
+                            DrawText("Failed to start up the server....",300,200,20,NEON_GREEN);
+                            currentScreen = ScreenState::MENU;
+                        }
+                        DrawText("Waiting for player 2 ....",300,200,20,NEON_GREEN);
+                       
+                        
+                    }
+
+                if(serverThread.joinable()) serverThread.detach();
+                //if(ClientConnected==1){
+                //     currentScreen = ScreenState::PLAYING;
+                // }else{
+                //     auto now = chrono::steady_clock::now();
+                //     if(now-start > chrono::seconds(15)){
+                //         DrawText("Server Timeout returning to Home Screen..",400,200,20,NEON_GREEN);
+                //         
+                //         serverRunning = false;
+                //         currentScreen  =ScreenState::MENU;
+                //     }
+                // }
+                
                 
             
-                DrawText("Hosting the game...\nPress ESC to go back", 200, 200, 20, NEON_GREEN);
+                
                 
               
                 // DrawText("Server up and running waiting for someone to join",400,400,20,NEON_GREEN);
-                // if (IsKeyPressed(KEY_ESCAPE) ) {
-                //     currentScreen = ScreenState::MENU;
-                // }
+                if (IsKeyPressed(KEY_B) ) {
+                    currentScreen = ScreenState::MENU;
+                }
               
                 break;
             }
