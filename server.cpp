@@ -5,7 +5,7 @@
 
 using namespace std;
 
-void startServer(atomic<int>& ClientConnected) {
+void startServer(atomic<int>& ClientConnected,atomic<bool>& Server) {
     if (enet_initialize() != 0) {
         fprintf(stderr, " Failed to initialize ENet.\n");
         ClientConnected = -1 ;
@@ -25,7 +25,7 @@ void startServer(atomic<int>& ClientConnected) {
         ClientConnected = -1;
         return;
     }
-
+    Server = false;
     printf("ENet server started on port 1234. Waiting for connections...\n");
 
     ENetEvent event;
@@ -54,11 +54,19 @@ void startServer(atomic<int>& ClientConnected) {
                 default:
                     break;
             }
-        } else {
+        }else if(!Server){
+             enet_host_destroy(server);
+            printf("Closed server...\n");
+            break;
+    
+        }
+        else {
             printf(" No activity. Still listening...\n");
         }
     }
+    if(enet_host_service(server,&event,5000)>0){
+        enet_host_destroy(server);
+        printf("Closed server...\n");
+    }
 
-    enet_host_destroy(server);
-    
 }

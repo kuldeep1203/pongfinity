@@ -14,9 +14,12 @@ const int screenheight = 800;
 const Color NEON_GREEN = (Color){57,255,20,255};
 bool gameEnded = false;
 bool serverRunning = false;
-atomic<int> ClientConnected = 0;
+atomic<int> ClientConnected = 0 ;
+atomic<bool> Server = false;
+atomic<bool> serverShouldRun = true; // Add this line to declare serverShouldRun
 bool clientRunning = false;
 thread clientThread;
+thread serverThread;
 enum class ScreenState{
     MENU,
     HOSTING,
@@ -229,42 +232,43 @@ int main() {
             {   
                 DrawText("Hosting the game...\nPress 'B' to go back", 200, 200, 20, NEON_GREEN);
                 static auto start  = chrono::steady_clock::now();
-                thread serverThread(startServer,ref(ClientConnected));
-                serverRunning = true;
-                if(!serverRunning){
-                        if(ClientConnected==-1){
-                            cout<<"failed to start up the server";
-                            DrawText("Failed to start up the server....",300,200,20,NEON_GREEN);
-                            currentScreen = ScreenState::MENU;
-                        }
-                        DrawText("Waiting for player 2 ....",300,200,20,NEON_GREEN);
-                       
-                        
+                if (!serverRunning) {
+                    ClientConnected = 0;
+                    Server = true;
+                    serverThread= thread(startServer, ref(ClientConnected), ref(serverShouldRun));
+                    start = std::chrono::steady_clock::now(); // reset timer
+                    serverRunning = true;
+                }
+                if (ClientConnected == -1) {
+                    DrawText("Failed to start server.", 200, 200, 20, NEON_GREEN);
+                    serverShouldRun = false;
+                    if (serverThread.joinable()) serverThread.join();
+                    serverRunning = false;
+                    currentScreen = ScreenState::MENU;
+                }else if (ClientConnected == 1) {
+                    DrawText("Player joined. Starting game...", 200, 200, 20, NEON_GREEN);
+                    serverShouldRun = false;
+                    if (serverThread.joinable()) serverThread.join();
+                    serverRunning = false;
+                    currentScreen = ScreenState::PLAYING;
+                } else {
+                    DrawText(" Waiting for player to connect...", 200, 400, 20, NEON_GREEN);
+                    auto now = std::chrono::steady_clock::now();
+                    if (now - start > std::chrono::seconds(15)) {
+                        DrawText("Timeout. Returning to menu...", 600, 250, 20, NEON_GREEN);
+                        serverShouldRun = false;
+                        if (serverThread.joinable()) serverThread.join();
+                        serverRunning = false;
+                        currentScreen = ScreenState::MENU;
                     }
-
-                if(serverThread.joinable()) serverThread.detach();
-                //if(ClientConnected==1){
-                //     currentScreen = ScreenState::PLAYING;
-                // }else{
-                //     auto now = chrono::steady_clock::now();
-                //     if(now-start > chrono::seconds(15)){
-                //         DrawText("Server Timeout returning to Home Screen..",400,200,20,NEON_GREEN);
-                //         
-                //         serverRunning = false;
-                //         currentScreen  =ScreenState::MENU;
-                //     }
-                // }
-                
-                
-            
-                
-                
-              
-                // DrawText("Server up and running waiting for someone to join",400,400,20,NEON_GREEN);
+                }
                 if (IsKeyPressed(KEY_B) ) {
+                    Server = false;
+                    serverRunning = false;
+                    if (serverThread.joinable()) serverThread.join();
                     currentScreen = ScreenState::MENU;
                 }
-              
+                if(serverThread.joinable()) serverThread.detach();
                 break;
             }
             case ScreenState::JOINING:
